@@ -25,8 +25,11 @@ content.
 ## Install
 
 ```sh
-pip install altr
+pip install altr-oss
 ```
+
+The PyPI distribution is `altr-oss`; the import and the CLI command are both
+plain `altr`.
 
 Or straight from the repo:
 

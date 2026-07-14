@@ -37,8 +37,9 @@ Releases publish automatically via PyPI trusted publishing - no API tokens.
 One-time setup, done once by the repo owner:
 
 1. On pypi.org: Account -> Publishing -> add a "pending publisher" for project
-   `altr`, owner `PasinduSuraweera`, repo `altr-oss`,
-   workflow `release.yml`, environment `pypi`.
+   `altr-oss` (PyPI rejects `altr` as too similar to an existing project),
+   owner `PasinduSuraweera`, repo `altr-oss`, workflow `release.yml`,
+   environment `pypi`.
 2. On GitHub: repo Settings -> Environments -> create an environment named
    `pypi`.
 
