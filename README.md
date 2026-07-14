@@ -79,6 +79,11 @@ long documents on Groq's free tier, add `--max-completion-tokens 2500` -
 Groq counts the expected output against your per-minute token budget up
 front, so uncapped long-document requests are rejected as too large.
 
+By default (`--tools auto`) the edit tools are only sent when your prompt
+looks like an edit, to keep requests small on tight free tiers. On a paid
+tier, pass `--tools all` so the model always sees every tool regardless of
+how you phrase the request.
+
 Editing works from the same command - name the file in your prompt:
 
 ```sh
