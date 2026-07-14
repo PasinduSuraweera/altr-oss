@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from openai import BadRequestError, OpenAI
+from openai import BadRequestError, OpenAI, RateLimitError
 
 from .prompts import SYSTEM_PROMPT
 from .tools import dispatch, get_tools
@@ -46,6 +48,23 @@ def _tool_use_failure_feedback(error: BadRequestError) -> str | None:
     return "\n\n".join(p for p in parts if p)
 
 
+def _rate_limit_delay(error: RateLimitError) -> float:
+    """Seconds to wait before retrying a 429, from the provider's own hint.
+
+    Groq puts 'Please try again in 7.66s' in the message; fall back to the
+    Retry-After header, then to a safe default.
+    """
+    body = error.body if isinstance(error.body, dict) else {}
+    body = body.get("error", body) if isinstance(body, dict) else {}
+    match = re.search(r"try again in ([0-9.]+)s", str(body.get("message", "")))
+    if match:
+        return min(float(match.group(1)) + 1.0, 90.0)
+    retry_after = error.response.headers.get("retry-after")
+    if retry_after and retry_after.replace(".", "", 1).isdigit():
+        return min(float(retry_after) + 1.0, 90.0)
+    return 15.0
+
+
 @dataclass
 class RunResult:
     """Files created during a run, plus the model's final text reply."""
@@ -63,6 +82,7 @@ class OfficeAgent:
         out_dir: str | Path = "output",
         max_rounds: int = 8,
         temperature: float = 0.3,
+        max_completion_tokens: int | None = None,
         docx_template: str | Path | None = None,
         pptx_template: str | Path | None = None,
         client: OpenAI | None = None,
@@ -79,6 +99,10 @@ class OfficeAgent:
         # Low temperature: tool arguments are structured output, and sampling
         # hot is where most schema misses and threadbare content come from.
         self.temperature = temperature
+        # Optional output cap. Some providers count it against per-minute
+        # token limits up front, so capping it lets big requests through
+        # tiers they would otherwise never fit (e.g. Groq free tier).
+        self.max_completion_tokens = max_completion_tokens
         self.templates: dict[str, Path] = {}
         if docx_template:
             self.templates["docx"] = Path(docx_template)
@@ -93,21 +117,36 @@ class OfficeAgent:
         ]
         result = RunResult()
 
-        for _ in range(self.max_rounds):
+        request: dict = {
+            "model": self.model,
+            "tools": get_tools(),
+            "tool_choice": "auto",
+            "temperature": self.temperature,
+        }
+        if self.max_completion_tokens is not None:
+            request["max_completion_tokens"] = self.max_completion_tokens
+
+        rounds = 0
+        rate_limit_waits = 0
+        while rounds < self.max_rounds:
             try:
                 response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    tools=get_tools(),
-                    tool_choice="auto",
-                    temperature=self.temperature,
+                    messages=messages, **request
                 )
             except BadRequestError as e:
                 feedback = _tool_use_failure_feedback(e)
                 if feedback is None:
                     raise
                 messages.append({"role": "user", "content": feedback})
+                rounds += 1
                 continue
+            except RateLimitError as e:
+                rate_limit_waits += 1
+                if rate_limit_waits > 3:
+                    raise
+                time.sleep(_rate_limit_delay(e))
+                continue  # waiting doesn't consume a round
+            rounds += 1
             message = response.choices[0].message
 
             if not message.tool_calls:
