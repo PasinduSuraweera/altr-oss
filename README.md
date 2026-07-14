@@ -8,13 +8,17 @@
 
 Claude has document skills. ChatGPT has them. **Open-weight models don't.**
 Point `gpt-oss-120b` on Groq (or any model behind an OpenAI-compatible API) at
-altr and it gains three tools it can call to produce real files:
+altr and it gains tools it can call to produce - and edit - real files:
 
-| Tool                  | Output  | Good for                                   |
-| --------------------- | ------- | ------------------------------------------ |
-| `create_document`     | `.docx` | reports, guides, letters, meeting notes    |
-| `create_spreadsheet`  | `.xlsx` | budgets, trackers, datasets - with formulas |
-| `create_presentation` | `.pptx` | pitch decks, talks - with speaker notes    |
+| Tool                  | Output  | Good for                                                  |
+| --------------------- | ------- | --------------------------------------------------------- |
+| `create_document`     | `.docx` | reports, guides, letters, meeting notes                   |
+| `create_spreadsheet`  | `.xlsx` | budgets, trackers, datasets - with formulas               |
+| `create_presentation` | `.pptx` | pitch decks, talks - with speaker notes                   |
+| `read_office_file`    | -       | inspecting an existing file before editing                |
+| `edit_document`       | `.docx` | find/replace, rewrite/delete paragraphs, append sections  |
+| `edit_spreadsheet`    | `.xlsx` | set cells and formulas, append rows, add sheets           |
+| `edit_presentation`   | `.pptx` | retitle slides, find/replace, append slides               |
 
 The model sends structured JSON through standard tool calling; altr
 validates it (Pydantic) and renders it (`python-docx`, `openpyxl`,
@@ -75,6 +79,19 @@ long documents on Groq's free tier, add `--max-completion-tokens 2500` -
 Groq counts the expected output against your per-minute token budget up
 front, so uncapped long-document requests are rejected as too large.
 
+Editing works from the same command - name the file in your prompt:
+
+```sh
+altr make "In output/report.docx, rename Project Falcon to Condor everywhere \
+           and append a Risks section with two bullets"
+```
+
+The model reads the file first (`read_office_file` gives it paragraph and
+slide indexes), then applies validated edit operations in place. Edits are
+restricted to files under the working and output directories. One caveat:
+editing an `.xlsx` drops its existing charts (an openpyxl round-trip
+limitation) - altr warns the model so it can recreate them.
+
 Render a JSON spec directly, no model involved (great for testing):
 
 ```sh
@@ -114,6 +131,37 @@ for call in response.choices[0].message.tool_calls:
 
 `dispatch` never raises on bad model output - validation and render errors come
 back as data you can hand to the model for self-correction.
+
+## Use it as an MCP server
+
+Give Claude Desktop, Claude Code, Cursor, or any MCP client the same document
+skills:
+
+```sh
+pip install "altr-oss[mcp]"
+```
+
+Claude Code:
+
+```sh
+claude mcp add altr -- altr mcp --out ~/Documents/altr
+```
+
+Claude Desktop / other clients (JSON config):
+
+```json
+{
+  "mcpServers": {
+    "altr": {
+      "command": "altr",
+      "args": ["mcp", "--out", "/path/for/generated/files"]
+    }
+  }
+}
+```
+
+The server speaks stdio and exposes all seven tools; `--docx-template` and
+`--pptx-template` work here too.
 
 ## What the model can express
 
@@ -162,6 +210,9 @@ to_pdf("output/report.docx")
 
 ## Roadmap
 
+- [ ] Model reliability benchmark (which local models handle document tasks?)
+- [ ] More edit operations (insert at position, edit tables, restyle)
+- [ ] Preserve charts when editing spreadsheets
 - [ ] Recipe/preset library of reusable prompts
 - [ ] Configurable theme (swap the accent color and chart palette)
 - [ ] Chart axis titles and number formats
