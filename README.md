@@ -1,6 +1,6 @@
-# officesmith
+# altr
 
-> Office document skills - Word, Excel, PowerPoint - for open-weight models.
+> Open source doc / excel / ppt skills for LLMs.
 
 [![CI](https://github.com/PasinduSuraweera/altr-oss/actions/workflows/ci.yml/badge.svg)](https://github.com/PasinduSuraweera/altr-oss/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -8,7 +8,7 @@
 
 Claude has document skills. ChatGPT has them. **Open-weight models don't.**
 Point `gpt-oss-120b` on Groq (or any model behind an OpenAI-compatible API) at
-officesmith and it gains three tools it can call to produce real files:
+altr and it gains three tools it can call to produce real files:
 
 | Tool                  | Output  | Good for                                   |
 | --------------------- | ------- | ------------------------------------------ |
@@ -16,7 +16,7 @@ officesmith and it gains three tools it can call to produce real files:
 | `create_spreadsheet`  | `.xlsx` | budgets, trackers, datasets - with formulas |
 | `create_presentation` | `.pptx` | pitch decks, talks - with speaker notes    |
 
-The model sends structured JSON through standard tool calling; officesmith
+The model sends structured JSON through standard tool calling; altr
 validates it (Pydantic) and renders it (`python-docx`, `openpyxl`,
 `python-pptx`). Renderer errors are fed back to the model so it can correct
 itself. No code execution, no sandboxes - the model can only emit document
@@ -33,36 +33,36 @@ pip install git+https://github.com/PasinduSuraweera/altr-oss
 ```sh
 export GROQ_API_KEY=gsk_...
 
-officesmith make "Create a 6-slide pitch deck for a solar-powered drone startup"
-officesmith make "Make a 12-month SaaS budget spreadsheet with formula totals"
-officesmith make "Write a 2-page onboarding doc for new backend engineers"
+altr make "Create a 6-slide pitch deck for a solar-powered drone startup"
+altr make "Make a 12-month SaaS budget spreadsheet with formula totals"
+altr make "Write a 2-page onboarding doc for new backend engineers"
 ```
 
 Files land in `./output`. Works with any OpenAI-compatible server:
 
 ```sh
 # Groq (default)
-officesmith make "..." --model openai/gpt-oss-120b
+altr make "..." --model openai/gpt-oss-120b
 
 # Ollama, fully local
-officesmith make "..." --base-url http://localhost:11434/v1 --model llama3.3 --api-key ollama
+altr make "..." --base-url http://localhost:11434/v1 --model llama3.3 --api-key ollama
 
 # vLLM / LM Studio / anything else that speaks chat completions
-officesmith make "..." --base-url http://localhost:8000/v1 --model my-model
+altr make "..." --base-url http://localhost:8000/v1 --model my-model
 ```
 
 Render a JSON spec directly, no model involved (great for testing):
 
 ```sh
-officesmith render presentation examples/pitch-deck.json
-officesmith render spreadsheet examples/budget.json
-officesmith render document examples/onboarding-doc.json
+altr render presentation examples/pitch-deck.json
+altr render spreadsheet examples/budget.json
+altr render document examples/onboarding-doc.json
 ```
 
 ## Use it as a library
 
 ```python
-from officesmith import OfficeAgent
+from altr import OfficeAgent
 
 agent = OfficeAgent(model="openai/gpt-oss-120b", out_dir="out")
 result = agent.run("Create a quarterly report with a KPI table")
@@ -75,7 +75,7 @@ print(result.reply)   # the model's final message
 Already have an agent loop? Take just the tools:
 
 ```python
-from officesmith import SYSTEM_PROMPT, get_tools, dispatch
+from altr import SYSTEM_PROMPT, get_tools, dispatch
 
 response = client.chat.completions.create(
     model="openai/gpt-oss-120b",

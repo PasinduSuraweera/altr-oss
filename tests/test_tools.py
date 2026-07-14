@@ -1,6 +1,6 @@
 import json
 
-from officesmith.tools import dispatch, get_tools
+from altr.tools import dispatch, get_tools
 
 
 def test_get_tools_shape():

@@ -1,7 +1,7 @@
 """Command-line entry points.
 
-    officesmith make "Create a pitch deck about solar drones"
-    officesmith render presentation examples/pitch.json
+    altr make "Create a pitch deck about solar drones"
+    altr render presentation examples/pitch.json
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ _RENDERERS = {
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="officesmith",
+        prog="altr",
         description="Office document skills (docx/xlsx/pptx) for open-weight models.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
@@ -60,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
             max_rounds=args.max_rounds,
         )
     except ValueError as e:
-        print(f"officesmith: {e}", file=sys.stderr)
+        print(f"altr: {e}", file=sys.stderr)
         return 2
 
     result = agent.run(args.prompt)
@@ -69,7 +69,7 @@ def main(argv: list[str] | None = None) -> int:
     if result.reply:
         print(result.reply)
     if not result.files:
-        print("officesmith: the model created no files", file=sys.stderr)
+        print("altr: the model created no files", file=sys.stderr)
         return 1
     return 0
 

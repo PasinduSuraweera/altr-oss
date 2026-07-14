@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "officesmith"
+name = "altr"
 version = "0.1.0"
-description = "Office document skills (docx, xlsx, pptx) for open-weight models on Groq, Ollama, vLLM - any OpenAI-compatible endpoint."
+description = "Open source doc / excel / ppt skills for LLMs - Groq, Ollama, vLLM, any OpenAI-compatible endpoint."
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Pasindu Suraweera" }]
@@ -23,10 +23,10 @@ dependencies = [
 dev = ["pytest>=8"]
 
 [project.scripts]
-officesmith = "officesmith.cli:main"
+altr = "altr.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/PasinduSuraweera/altr-oss"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/officesmith"]
+packages = ["src/altr"]

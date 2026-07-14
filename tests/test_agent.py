@@ -4,7 +4,7 @@ import copy
 import json
 from types import SimpleNamespace
 
-from officesmith.agent import OfficeAgent
+from altr.agent import OfficeAgent
 
 
 def _tool_call(call_id, name, arguments):

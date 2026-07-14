@@ -2,8 +2,8 @@ from docx import Document
 from openpyxl import load_workbook
 from pptx import Presentation
 
-from officesmith.renderers import output_path, render_document, render_presentation, render_spreadsheet
-from officesmith.schemas import DocumentSpec, PresentationSpec, SpreadsheetSpec
+from altr.renderers import output_path, render_document, render_presentation, render_spreadsheet
+from altr.schemas import DocumentSpec, PresentationSpec, SpreadsheetSpec
 
 
 def test_render_document_roundtrip(tmp_path):

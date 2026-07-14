@@ -1,4 +1,4 @@
-# Contributing to officesmith
+# Contributing to altr
 
 Thanks for your interest! Bug reports, new block types, renderer improvements,
 and docs are all welcome.
@@ -18,7 +18,7 @@ pytest
 Try the offline renderer without an API key:
 
 ```sh
-officesmith render presentation examples/pitch-deck.json
+altr render presentation examples/pitch-deck.json
 ```
 
 ## Guidelines

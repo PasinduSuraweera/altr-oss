@@ -25,7 +25,7 @@ jobs:
         run: pytest -q
       - name: Smoke-test offline rendering
         run: |
-          officesmith render document examples/onboarding-doc.json --out smoke
-          officesmith render spreadsheet examples/budget.json --out smoke
-          officesmith render presentation examples/pitch-deck.json --out smoke
+          altr render document examples/onboarding-doc.json --out smoke
+          altr render spreadsheet examples/budget.json --out smoke
+          altr render presentation examples/pitch-deck.json --out smoke
           ls -l smoke

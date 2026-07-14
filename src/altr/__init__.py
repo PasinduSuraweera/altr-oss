@@ -1,4 +1,4 @@
-"""officesmith - office document skills for open-weight models."""
+"""altr - office document skills for open-weight models."""
 
 from .agent import DEFAULT_MODEL, GROQ_BASE_URL, OfficeAgent, RunResult
 from .prompts import SYSTEM_PROMPT
