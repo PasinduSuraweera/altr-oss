@@ -209,3 +209,19 @@ def test_agent_handles_fileless_tool_outcomes(tmp_path):
 
     assert [p.name for p in result.files] == ["a.docx"]
     assert result.reply == "done"
+
+
+def test_agent_tools_mode_controls_schema_payload(tmp_path):
+    client = FakeClient([_response(content="ok") for _ in range(3)])
+    creative_prompt = "make me a pitch deck about cats"
+
+    OfficeAgent(client=client, out_dir=tmp_path).run(creative_prompt)
+    assert len(client.requests[0]["tools"]) == 3  # auto: create-only
+
+    OfficeAgent(client=client, out_dir=tmp_path, tools="all").run(creative_prompt)
+    assert len(client.requests[1]["tools"]) == 7
+
+    OfficeAgent(client=client, out_dir=tmp_path, tools="create").run(
+        "update report.docx"
+    )
+    assert len(client.requests[2]["tools"]) == 3
