@@ -50,6 +50,11 @@ def main(argv: list[str] | None = None) -> int:
     make.add_argument("--pptx-template", default=None, help="template .pptx for brand styling")
     make.add_argument("--pdf", action="store_true", help="also export each file to PDF (needs LibreOffice)")
 
+    mcp = sub.add_parser("mcp", help="serve the document tools over MCP (stdio)")
+    mcp.add_argument("--out", default="output", help="output directory (default: ./output)")
+    mcp.add_argument("--docx-template", default=None, help="template .docx for brand styling")
+    mcp.add_argument("--pptx-template", default=None, help="template .pptx for brand styling")
+
     render = sub.add_parser("render", help="render a JSON spec to a file, no model involved")
     render.add_argument("type", choices=sorted(_RENDERERS))
     render.add_argument("spec", help="path to a JSON spec file")
@@ -61,7 +66,24 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "render":
         return _render(args)
+    if args.command == "mcp":
+        return _mcp(args)
     return _make(args)
+
+
+def _mcp(args: argparse.Namespace) -> int:
+    try:
+        from .mcp_server import serve
+    except ImportError as e:
+        print(f"altr: {e}", file=sys.stderr)
+        return 2
+    templates = {}
+    if args.docx_template:
+        templates["docx"] = Path(args.docx_template)
+    if args.pptx_template:
+        templates["pptx"] = Path(args.pptx_template)
+    serve(args.out, templates)
+    return 0
 
 
 def _render(args: argparse.Namespace) -> int:
