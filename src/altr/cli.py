@@ -41,6 +41,12 @@ def main(argv: list[str] | None = None) -> int:
     make.add_argument("--max-rounds", type=int, default=8)
     make.add_argument("--temperature", type=float, default=0.3)
     make.add_argument(
+        "--tools", choices=["auto", "all", "create"], default="auto",
+        help="which tool schemas to send the model: 'auto' adds the edit "
+        "tools only for edit-shaped prompts (saves tokens on tight tiers); "
+        "'all' always sends everything - use this on paid tiers",
+    )
+    make.add_argument(
         "--max-completion-tokens", type=int, default=None,
         help="cap the model's output tokens; also shrinks the request budget "
         "some providers count against per-minute limits (try 2500 on Groq's "
@@ -113,6 +119,7 @@ def _make(args: argparse.Namespace) -> int:
             max_rounds=args.max_rounds,
             temperature=args.temperature,
             max_completion_tokens=args.max_completion_tokens,
+            tools=args.tools,
             docx_template=args.docx_template,
             pptx_template=args.pptx_template,
         )
