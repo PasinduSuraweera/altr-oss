@@ -200,3 +200,128 @@ class PresentationSpec(BaseModel):
 
     filename: str = Field(description="Output file name, e.g. 'pitch.pptx'.")
     slides: list[Slide] = Field(min_length=1)
+
+
+# --- Reading and editing existing files --------------------------------------
+
+_PATH_DESC = (
+    "Path to an existing file the user told you about, e.g. 'output/report.docx'."
+)
+
+
+class ReadFileSpec(BaseModel):
+    """Inspect an existing .docx/.xlsx/.pptx before editing it."""
+
+    path: str = Field(description=_PATH_DESC)
+
+
+class AppendBlocks(BaseModel):
+    """Add new content blocks at the end of the document."""
+
+    op: Literal["append_blocks"] = "append_blocks"
+    blocks: list[Block] = Field(min_length=1)
+
+
+class ReplaceText(BaseModel):
+    """Replace every occurrence of a phrase throughout the document."""
+
+    op: Literal["replace_text"] = "replace_text"
+    find: str = Field(min_length=1)
+    replace: str
+
+
+class SetParagraph(BaseModel):
+    """Rewrite one paragraph, keeping its style."""
+
+    op: Literal["set_paragraph"] = "set_paragraph"
+    index: int = Field(ge=0, description="Paragraph index from read_office_file.")
+    text: str
+
+
+class DeleteParagraph(BaseModel):
+    op: Literal["delete_paragraph"] = "delete_paragraph"
+    index: int = Field(ge=0, description="Paragraph index from read_office_file.")
+
+
+DocEdit = Annotated[
+    Union[AppendBlocks, ReplaceText, SetParagraph, DeleteParagraph],
+    Field(discriminator="op"),
+]
+
+
+class EditDocumentSpec(BaseModel):
+    """Edits applied in order to an existing Word document."""
+
+    path: str = Field(description=_PATH_DESC)
+    edits: list[DocEdit] = Field(min_length=1)
+
+
+class SetCells(BaseModel):
+    """Write values into individual cells by A1-style reference."""
+
+    op: Literal["set_cells"] = "set_cells"
+    sheet: str = Field(description="Worksheet name from read_office_file.")
+    cells: dict[str, Cell] = Field(
+        min_length=1,
+        description="A1-style refs to values, e.g. {\"B2\": 120, \"C7\": \"=SUM(C2:C6)\"}.",
+    )
+
+
+class AppendRows(BaseModel):
+    """Add data rows after the last used row of a worksheet."""
+
+    op: Literal["append_rows"] = "append_rows"
+    sheet: str = Field(description="Worksheet name from read_office_file.")
+    rows: list[list[Cell]] = Field(min_length=1)
+
+
+class AddSheet(BaseModel):
+    """Add a whole new worksheet to the workbook."""
+
+    op: Literal["add_sheet"] = "add_sheet"
+    sheet: Sheet
+
+
+SheetEdit = Annotated[
+    Union[SetCells, AppendRows, AddSheet], Field(discriminator="op")
+]
+
+
+class EditSpreadsheetSpec(BaseModel):
+    """Edits applied in order to an existing Excel workbook."""
+
+    path: str = Field(description=_PATH_DESC)
+    edits: list[SheetEdit] = Field(min_length=1)
+
+
+class AppendSlides(BaseModel):
+    """Add new slides at the end of the deck."""
+
+    op: Literal["append_slides"] = "append_slides"
+    slides: list[Slide] = Field(min_length=1)
+
+
+class SetSlideTitle(BaseModel):
+    op: Literal["set_slide_title"] = "set_slide_title"
+    index: int = Field(ge=0, description="Slide index from read_office_file.")
+    title: str
+
+
+class ReplaceSlideText(BaseModel):
+    """Replace every occurrence of a phrase across all slides."""
+
+    op: Literal["replace_text"] = "replace_text"
+    find: str = Field(min_length=1)
+    replace: str
+
+
+SlideEdit = Annotated[
+    Union[AppendSlides, SetSlideTitle, ReplaceSlideText], Field(discriminator="op")
+]
+
+
+class EditPresentationSpec(BaseModel):
+    """Edits applied in order to an existing PowerPoint deck."""
+
+    path: str = Field(description=_PATH_DESC)
+    edits: list[SlideEdit] = Field(min_length=1)
