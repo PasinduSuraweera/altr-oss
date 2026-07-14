@@ -28,6 +28,19 @@
         { "text": "Zero-cost recharge at solar relay stations" },
         { "text": "FAA Part 135 certification in progress" }
       ]
+    },
+    {
+      "layout": "chart",
+      "title": "Deliveries per quarter",
+      "chart": {
+        "kind": "bar",
+        "categories": ["Q1", "Q2", "Q3", "Q4"],
+        "series": [
+          { "name": "Pilot region", "values": [1200, 2900, 5400, 9800] },
+          { "name": "Expansion region", "values": [0, 400, 2100, 5600] }
+        ]
+      },
+      "notes": "Growth is organic - no paid acquisition yet."
     }
   ]
 }
