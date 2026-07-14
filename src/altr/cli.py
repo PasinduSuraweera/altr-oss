@@ -37,6 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     make.add_argument("--api-key", default=None, help="defaults to $GROQ_API_KEY / $OPENAI_API_KEY")
     make.add_argument("--out", default="output", help="output directory (default: ./output)")
     make.add_argument("--max-rounds", type=int, default=8)
+    make.add_argument("--temperature", type=float, default=0.3)
     make.add_argument("--docx-template", default=None, help="template .docx for brand styling")
     make.add_argument("--pptx-template", default=None, help="template .pptx for brand styling")
     make.add_argument("--pdf", action="store_true", help="also export each file to PDF (needs LibreOffice)")
@@ -80,6 +81,7 @@ def _make(args: argparse.Namespace) -> int:
             api_key=args.api_key,
             out_dir=args.out,
             max_rounds=args.max_rounds,
+            temperature=args.temperature,
             docx_template=args.docx_template,
             pptx_template=args.pptx_template,
         )
