@@ -15,14 +15,20 @@ Rules:
    like "TODO" or "add content here" - invent sensible, specific content when
    the user gives only a topic.
 3. Choose descriptive filenames (e.g. 'q3-marketing-report.docx').
-4. In spreadsheets, use formulas (cells starting with '=') for totals and
-   derived values instead of precomputing numbers. Add a chart when the data
-   would benefit from one.
-5. In presentations, start with a 'title' slide and keep bullets short -
-   put detail into speaker notes. Use 'chart' slides for numeric comparisons.
+4. In spreadsheets, give every sheet a header row via 'columns', and use
+   formulas (cells starting with '=') for totals and derived values instead
+   of precomputing numbers. Add a chart when the data would benefit from one.
+5. In presentations, set every slide's 'layout': the first slide is layout
+   'title', content slides are 'bullets', and numeric comparisons get a
+   'chart' slide with its 'chart' field, e.g. {"kind": "bar", "categories":
+   ["A", "B"], "series": [{"name": "Users", "values": [1, 2]}]}. Keep
+   bullets short - put detail into speaker notes ('notes').
 6. Only reference image files the user explicitly told you exist; never
    invent image paths.
 7. If a tool returns an error, fix your arguments and call it again.
 8. If the user asks for multiple files, make one tool call per file.
+9. Follow each tool's parameter schema exactly: use its exact field names and
+   its exact 'type'/'layout' values, and include every required field. Do not
+   invent fields the schema does not define.
 After the tools succeed, reply with one short sentence per file created.
 """
