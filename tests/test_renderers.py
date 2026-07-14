@@ -90,3 +90,54 @@ def test_output_path_blocks_traversal(tmp_path):
     path = output_path(tmp_path, "../../etc/passwd", ".docx")
     assert path.parent == tmp_path
     assert path.name == "passwd.docx"
+
+
+def test_string_bullets_are_accepted(tmp_path):
+    spec = PresentationSpec.model_validate(
+        {
+            "filename": "pitch.pptx",
+            "slides": [
+                {
+                    "layout": "bullets",
+                    "title": "Why altr",
+                    "bullets": ["Plain string", {"text": "Object bullet", "level": 1}],
+                }
+            ],
+        }
+    )
+    assert [(b.text, b.level) for b in spec.slides[0].bullets] == [
+        ("Plain string", 0),
+        ("Object bullet", 1),
+    ]
+    path = render_presentation(spec, tmp_path)
+    prs = Presentation(str(path))
+    texts = [
+        p.text
+        for shape in prs.slides[0].shapes
+        if shape.has_text_frame
+        for p in shape.text_frame.paragraphs
+    ]
+    assert "Plain string" in texts
+    assert "Object bullet" in texts
+
+
+def test_chart_without_value_columns_plots_numeric_columns(tmp_path):
+    spec = SpreadsheetSpec.model_validate(
+        {
+            "filename": "costs.xlsx",
+            "sheets": [
+                {
+                    "name": "Costs",
+                    "columns": [{"header": "Item"}, {"header": "Cost"}],
+                    "rows": [["Servers", 1200], ["Domains", 40]],
+                    "charts": [{"kind": "bar", "title": "Costs"}],
+                }
+            ],
+        }
+    )
+    path = render_spreadsheet(spec, tmp_path)
+    wb = load_workbook(str(path))
+    charts = wb["Costs"]._charts
+    assert len(charts) == 1
+    # The lone numeric column (B) was picked up as the data series.
+    assert "B" in charts[0].series[0].val.numRef.f
