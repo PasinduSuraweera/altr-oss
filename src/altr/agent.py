@@ -36,6 +36,8 @@ class OfficeAgent:
         api_key: str | None = None,
         out_dir: str | Path = "output",
         max_rounds: int = 8,
+        docx_template: str | Path | None = None,
+        pptx_template: str | Path | None = None,
         client: OpenAI | None = None,
     ) -> None:
         api_key = api_key or os.environ.get("GROQ_API_KEY") or os.environ.get("OPENAI_API_KEY")
@@ -47,6 +49,11 @@ class OfficeAgent:
         self.model = model
         self.out_dir = Path(out_dir)
         self.max_rounds = max_rounds
+        self.templates: dict[str, Path] = {}
+        if docx_template:
+            self.templates["docx"] = Path(docx_template)
+        if pptx_template:
+            self.templates["pptx"] = Path(pptx_template)
 
     def run(self, prompt: str) -> RunResult:
         """Ask the model to fulfil `prompt`, executing its tool calls."""
@@ -87,7 +94,9 @@ class OfficeAgent:
                 }
             )
             for tc in message.tool_calls:
-                outcome = dispatch(tc.function.name, tc.function.arguments, self.out_dir)
+                outcome = dispatch(
+                    tc.function.name, tc.function.arguments, self.out_dir, self.templates
+                )
                 if outcome.get("ok"):
                     result.files.append(Path(outcome["file"]))
                 messages.append(

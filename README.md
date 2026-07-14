@@ -25,6 +25,12 @@ content.
 ## Install
 
 ```sh
+pip install altr
+```
+
+Or straight from the repo:
+
+```sh
 pip install git+https://github.com/PasinduSuraweera/altr-oss
 ```
 
@@ -93,24 +99,48 @@ back as data you can hand to the model for self-correction.
 
 ## What the model can express
 
-- **Documents**: headings (9 levels), paragraphs, bullet & numbered lists,
-  tables with bold headers, page breaks.
+- **Documents**: headings (9 levels), paragraphs with inline
+  **bold**/*italic*/`code`, bullet & numbered lists, tables with bold headers,
+  images with captions, whole markdown blocks, page breaks.
 - **Spreadsheets**: multiple worksheets, bold header rows, column widths,
-  frozen header rows, and live Excel formulas (`=SUM(B2:B10)`).
+  frozen header rows, live Excel formulas (`=SUM(B2:B10)`), and bar/line/pie
+  charts built from the sheet's data.
 - **Presentations**: title slides, section dividers, bulleted slides with
-  indent levels, speaker notes.
+  indent levels, chart slides, full-width image slides, speaker notes.
 
 Filenames from the model are sanitized to their base name, so output can never
-escape the output directory.
+escape the output directory. Image paths must point at existing local files -
+the system prompt tells the model to only use files you mention.
+
+## Brand templates
+
+Start every generated file from your own template so fonts, colors, and slide
+masters match your brand:
+
+```sh
+altr make "..." --docx-template brand.docx --pptx-template brand.pptx
+altr render presentation deck.json --template brand.pptx
+```
+
+Custom `.pptx` templates must keep the stock layout order (0 title,
+1 title+content, 2 section header, 5 title only).
+
+## PDF export
+
+Pass `--pdf` to `make` or `render` to also export each created file as PDF.
+Requires LibreOffice (`soffice`) on your PATH. From Python:
+
+```python
+from altr import to_pdf
+to_pdf("output/report.docx")
+```
 
 ## Roadmap
 
-- [ ] Charts in spreadsheets and slides
-- [ ] Images (model-referenced local files) in documents and decks
-- [ ] Custom `.pptx`/`.docx` templates for brand styling
-- [ ] Markdown to docx import block
-- [ ] PDF export
-- [ ] Publish to PyPI
+- [ ] Recipe/preset library of reusable prompts
+- [ ] Chart styling options (colors, axis titles, legends)
+- [ ] Nested markdown lists and blockquotes
+- [ ] Watermarks and headers/footers
 
 ## Contributing
 

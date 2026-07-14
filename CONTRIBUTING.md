@@ -31,6 +31,21 @@ altr render presentation examples/pitch-deck.json
 - `dispatch()` must never raise on bad model input; return
   `{"ok": False, "error": ...}` so the model can self-correct.
 
+## Releasing to PyPI (maintainers)
+
+Releases publish automatically via PyPI trusted publishing - no API tokens.
+One-time setup, done once by the repo owner:
+
+1. On pypi.org: Account -> Publishing -> add a "pending publisher" for project
+   `altr`, owner `PasinduSuraweera`, repo `altr-oss`,
+   workflow `release.yml`, environment `pypi`.
+2. On GitHub: repo Settings -> Environments -> create an environment named
+   `pypi`.
+
+Then to ship a release: bump `version` in `pyproject.toml`, tag (e.g.
+`v0.2.0`), and publish a GitHub release - the workflow builds and uploads to
+PyPI.
+
 ## Proposing features
 
 Open an issue first for anything beyond a small fix (new document features,

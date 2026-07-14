@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 from .agent import DEFAULT_MODEL, GROQ_BASE_URL, OfficeAgent
+from .pdf import to_pdf
 from .renderers import render_document, render_presentation, render_spreadsheet
 from .schemas import DocumentSpec, PresentationSpec, SpreadsheetSpec
 
@@ -36,21 +37,42 @@ def main(argv: list[str] | None = None) -> int:
     make.add_argument("--api-key", default=None, help="defaults to $GROQ_API_KEY / $OPENAI_API_KEY")
     make.add_argument("--out", default="output", help="output directory (default: ./output)")
     make.add_argument("--max-rounds", type=int, default=8)
+    make.add_argument("--docx-template", default=None, help="template .docx for brand styling")
+    make.add_argument("--pptx-template", default=None, help="template .pptx for brand styling")
+    make.add_argument("--pdf", action="store_true", help="also export each file to PDF (needs LibreOffice)")
 
     render = sub.add_parser("render", help="render a JSON spec to a file, no model involved")
     render.add_argument("type", choices=sorted(_RENDERERS))
     render.add_argument("spec", help="path to a JSON spec file")
     render.add_argument("--out", default="output", help="output directory (default: ./output)")
+    render.add_argument("--template", default=None, help="template .docx/.pptx for brand styling")
+    render.add_argument("--pdf", action="store_true", help="also export to PDF (needs LibreOffice)")
 
     args = parser.parse_args(argv)
 
     if args.command == "render":
-        spec_cls, render_fn = _RENDERERS[args.type]
-        spec = spec_cls.model_validate(json.loads(Path(args.spec).read_text()))
-        path = render_fn(spec, Path(args.out))
-        print(f"created {path}")
-        return 0
+        return _render(args)
+    return _make(args)
 
+
+def _render(args: argparse.Namespace) -> int:
+    spec_cls, render_fn = _RENDERERS[args.type]
+    spec = spec_cls.model_validate(json.loads(Path(args.spec).read_text()))
+    if args.type == "spreadsheet":
+        if args.template:
+            print("altr: --template is not supported for spreadsheets", file=sys.stderr)
+            return 2
+        path = render_fn(spec, Path(args.out))
+    else:
+        template = Path(args.template) if args.template else None
+        path = render_fn(spec, Path(args.out), template=template)
+    print(f"created {path}")
+    if args.pdf:
+        print(f"created {to_pdf(path)}")
+    return 0
+
+
+def _make(args: argparse.Namespace) -> int:
     try:
         agent = OfficeAgent(
             model=args.model,
@@ -58,6 +80,8 @@ def main(argv: list[str] | None = None) -> int:
             api_key=args.api_key,
             out_dir=args.out,
             max_rounds=args.max_rounds,
+            docx_template=args.docx_template,
+            pptx_template=args.pptx_template,
         )
     except ValueError as e:
         print(f"altr: {e}", file=sys.stderr)
@@ -66,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
     result = agent.run(args.prompt)
     for path in result.files:
         print(f"created {path}")
+        if args.pdf:
+            print(f"created {to_pdf(path)}")
     if result.reply:
         print(result.reply)
     if not result.files:
