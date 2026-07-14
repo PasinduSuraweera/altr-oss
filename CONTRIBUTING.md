@@ -26,6 +26,14 @@ altr render presentation examples/pitch-deck.json
 - Keep PRs focused: one change per PR.
 - Every schema or renderer change needs a test that re-opens the generated
   file and asserts on its contents (see `tests/test_renderers.py`).
+- Colors and other visual constants live in `src/altr/theme.py` - renderers
+  must not hard-code their own. The chart palette's slot order is a
+  colorblind-safety property; never reorder or extend it casually.
+- For visual changes, open the generated files (or export them to
+  PDF/PNG) and look at them - structural asserts don't catch layout bugs.
+- Loosen schemas toward what models actually emit (accept both shapes,
+  normalize in a validator) rather than demanding stricter output from the
+  model; small local models won't comply.
 - Field descriptions in `schemas.py` are model-facing prompt text - keep them
   short, concrete, and example-driven.
 - `dispatch()` must never raise on bad model input; return
