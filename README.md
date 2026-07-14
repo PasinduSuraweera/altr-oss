@@ -70,6 +70,11 @@ Generation runs at `--temperature 0.3` by default - tool arguments are
 structured output, and sampling cooler makes small models dramatically more
 reliable at producing complete, schema-correct documents.
 
+Transient rate limits (429) are waited out and retried automatically. For
+long documents on Groq's free tier, add `--max-completion-tokens 2500` -
+Groq counts the expected output against your per-minute token budget up
+front, so uncapped long-document requests are rejected as too large.
+
 Render a JSON spec directly, no model involved (great for testing):
 
 ```sh
