@@ -58,12 +58,21 @@ _EDIT_HINTS = re.compile(
 )
 
 
-def _tools_for(prompt: str) -> list[dict]:
-    """Send the edit tools only when the prompt suggests an existing file.
+def _tools_for(prompt: str, mode: str) -> list[dict]:
+    """Pick which tool schemas to send.
 
-    Tool schemas are prompt tokens on every round; all seven together
+    'all' always sends every tool - right for paid tiers with real token
+    budgets. 'create' sends only the create tools. 'auto' (the default)
+    sends the edit tools only when the prompt suggests an existing file:
+    tool schemas are prompt tokens on every round, and all seven together
     (~5k tokens) would blow tight per-minute budgets like Groq's free tier.
     """
+    if mode == "all":
+        return get_tools()
+    if mode == "create":
+        return get_tools(_CREATE_TOOLS)
+    if mode != "auto":
+        raise ValueError(f"tools must be 'auto', 'all', or 'create', not {mode!r}")
     if _EDIT_HINTS.search(prompt):
         return get_tools()
     return get_tools(_CREATE_TOOLS)
@@ -104,6 +113,7 @@ class OfficeAgent:
         max_rounds: int = 8,
         temperature: float = 0.3,
         max_completion_tokens: int | None = None,
+        tools: str = "auto",
         docx_template: str | Path | None = None,
         pptx_template: str | Path | None = None,
         client: OpenAI | None = None,
@@ -124,6 +134,7 @@ class OfficeAgent:
         # token limits up front, so capping it lets big requests through
         # tiers they would otherwise never fit (e.g. Groq free tier).
         self.max_completion_tokens = max_completion_tokens
+        self.tools = tools  # 'auto' | 'all' | 'create' - see _tools_for
         self.templates: dict[str, Path] = {}
         if docx_template:
             self.templates["docx"] = Path(docx_template)
@@ -140,7 +151,7 @@ class OfficeAgent:
 
         request: dict = {
             "model": self.model,
-            "tools": _tools_for(prompt),
+            "tools": _tools_for(prompt, self.tools),
             "tool_choice": "auto",
             "temperature": self.temperature,
         }
