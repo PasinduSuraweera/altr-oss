@@ -10,8 +10,10 @@ build/
 # Generated documents
 /output/
 /smoke/
+/live-out*/
 
 # Editor/OS noise
 .idea/
 .vscode/
 .DS_Store
+.env
