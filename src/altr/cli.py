@@ -11,6 +11,8 @@ import json
 import sys
 from pathlib import Path
 
+from openai import APIError, APIStatusError
+
 from .agent import DEFAULT_MODEL, GROQ_BASE_URL, OfficeAgent
 from .pdf import to_pdf
 from .renderers import render_document, render_presentation, render_spreadsheet
@@ -38,6 +40,12 @@ def main(argv: list[str] | None = None) -> int:
     make.add_argument("--out", default="output", help="output directory (default: ./output)")
     make.add_argument("--max-rounds", type=int, default=8)
     make.add_argument("--temperature", type=float, default=0.3)
+    make.add_argument(
+        "--max-completion-tokens", type=int, default=None,
+        help="cap the model's output tokens; also shrinks the request budget "
+        "some providers count against per-minute limits (try 2500 on Groq's "
+        "free tier for long documents)",
+    )
     make.add_argument("--docx-template", default=None, help="template .docx for brand styling")
     make.add_argument("--pptx-template", default=None, help="template .pptx for brand styling")
     make.add_argument("--pdf", action="store_true", help="also export each file to PDF (needs LibreOffice)")
@@ -82,6 +90,7 @@ def _make(args: argparse.Namespace) -> int:
             out_dir=args.out,
             max_rounds=args.max_rounds,
             temperature=args.temperature,
+            max_completion_tokens=args.max_completion_tokens,
             docx_template=args.docx_template,
             pptx_template=args.pptx_template,
         )
@@ -89,7 +98,18 @@ def _make(args: argparse.Namespace) -> int:
         print(f"altr: {e}", file=sys.stderr)
         return 2
 
-    result = agent.run(args.prompt)
+    try:
+        result = agent.run(args.prompt)
+    except APIError as e:
+        print(f"altr: the API rejected the request: {_api_error_message(e)}", file=sys.stderr)
+        if _is_too_large(e):
+            print(
+                "altr: the request exceeds your tier's per-minute token limit and "
+                "waiting will not help. Try --max-completion-tokens 2500, a shorter "
+                "prompt, or a higher tier.",
+                file=sys.stderr,
+            )
+        return 1
     for path in result.files:
         print(f"created {path}")
         if args.pdf:
@@ -100,6 +120,20 @@ def _make(args: argparse.Namespace) -> int:
         print("altr: the model created no files", file=sys.stderr)
         return 1
     return 0
+
+
+def _api_error_message(error: APIError) -> str:
+    body = getattr(error, "body", None)
+    if isinstance(body, dict):
+        inner = body.get("error", body)
+        if isinstance(inner, dict) and inner.get("message"):
+            return str(inner["message"])
+    return str(error)
+
+
+def _is_too_large(error: APIError) -> bool:
+    """A 413 'request too large for TPM' can never succeed by waiting."""
+    return isinstance(error, APIStatusError) and error.response.status_code == 413
 
 
 if __name__ == "__main__":
