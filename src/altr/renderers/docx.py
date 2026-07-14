@@ -113,19 +113,37 @@ def _add_table(doc: Document, block: Table, styled: bool) -> None:
         table.style = "Table Grid"
     for i, header in enumerate(block.headers):
         cell = table.rows[0].cells[i]
-        run = cell.paragraphs[0].add_run(header)
-        run.bold = True
+        for run in _fill_cell(cell, header):
+            run.bold = True
+            if styled:
+                run.font.color.rgb = RGBColor.from_string("FFFFFF")
         if styled:
-            run.font.color.rgb = RGBColor.from_string("FFFFFF")
             _shade_cell(cell, theme.HEADER_FILL)
     for r, row in enumerate(block.rows):
         cells = table.add_row().cells
         for i, value in enumerate(row[: len(block.headers)]):
-            cells[i].text = value
+            _fill_cell(cells[i], value)
             if styled and r % 2 == 1:
                 _shade_cell(cells[i], theme.ROW_BAND)
     if styled:
         _set_table_borders(table)
+
+
+def _fill_cell(cell, text: str) -> list:
+    """Set a cell's text, rendering inline **bold**/*italic*/`code` markers
+    instead of leaking them as literal asterisks. Returns the created runs."""
+    para = cell.paragraphs[0]
+    runs = []
+    for kind, part in split_inline(text):
+        run = para.add_run(part)
+        if kind == "bold":
+            run.bold = True
+        elif kind == "italic":
+            run.italic = True
+        elif kind == "code":
+            run.font.name = "Courier New"
+        runs.append(run)
+    return runs
 
 
 def _add_styled_paragraph(doc: Document, text: str, style: str | None = None) -> None:
