@@ -46,35 +46,40 @@ def render_presentation(
     styled = template is None  # never restyle a user-provided brand template
 
     for index, slide_spec in enumerate(spec.slides):
-        layout = _effective_layout(slide_spec, is_first=index == 0)
-        slide = prs.slides.add_slide(prs.slide_layouts[_layout_index(layout)])
-        slide.shapes.title.text = slide_spec.title
-
-        if layout in ("title", "section") and slide_spec.subtitle:
-            slide.placeholders[1].text = slide_spec.subtitle
-
-        if layout == "bullets":
-            body = slide.placeholders[1].text_frame
-            for i, bullet in enumerate(slide_spec.bullets):
-                para = body.paragraphs[0] if i == 0 else body.add_paragraph()
-                para.text = bullet.text
-                para.level = bullet.level
-
-        if layout == "chart":
-            _add_chart(slide, slide_spec, styled)
-
-        if layout == "image":
-            _add_image(slide, slide_spec)
-
-        if slide_spec.notes:
-            slide.notes_slide.notes_text_frame.text = slide_spec.notes
-
-        if styled:
-            _style_slide(slide, layout, slide_spec)
+        add_slide(prs, slide_spec, is_first=index == 0, styled=styled)
 
     path = output_path(out_dir, spec.filename, ".pptx")
     prs.save(str(path))
     return path
+
+
+def add_slide(prs, slide_spec: Slide, is_first: bool, styled: bool) -> None:
+    """Append one slide to an open presentation (used by render and edit)."""
+    layout = _effective_layout(slide_spec, is_first=is_first)
+    slide = prs.slides.add_slide(prs.slide_layouts[_layout_index(layout)])
+    slide.shapes.title.text = slide_spec.title
+
+    if layout in ("title", "section") and slide_spec.subtitle:
+        slide.placeholders[1].text = slide_spec.subtitle
+
+    if layout == "bullets":
+        body = slide.placeholders[1].text_frame
+        for i, bullet in enumerate(slide_spec.bullets):
+            para = body.paragraphs[0] if i == 0 else body.add_paragraph()
+            para.text = bullet.text
+            para.level = bullet.level
+
+    if layout == "chart":
+        _add_chart(slide, slide_spec, styled)
+
+    if layout == "image":
+        _add_image(slide, slide_spec)
+
+    if slide_spec.notes:
+        slide.notes_slide.notes_text_frame.text = slide_spec.notes
+
+    if styled:
+        _style_slide(slide, layout, slide_spec)
 
 
 def _effective_layout(slide_spec: Slide, is_first: bool) -> str:
