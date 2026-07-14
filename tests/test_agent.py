@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import httpx
 import pytest
-from openai import BadRequestError
+from openai import BadRequestError, RateLimitError
 
 from altr.agent import OfficeAgent
 
@@ -135,6 +135,47 @@ def test_agent_reraises_unrelated_bad_requests(tmp_path):
 
     with pytest.raises(BadRequestError):
         agent.run("write me a memo")
+
+
+def _rate_limited(message):
+    request = httpx.Request("POST", "https://api.test/chat/completions")
+    body = {"message": message, "type": "tokens", "code": "rate_limit_exceeded"}
+    response = httpx.Response(429, request=request, json={"error": body})
+    return RateLimitError("Error code: 429", response=response, body=body)
+
+
+def test_agent_waits_out_rate_limits(tmp_path):
+    client = FakeClient(
+        [
+            _rate_limited("Rate limit reached. Please try again in 0.01s."),
+            _response(content="done"),
+        ]
+    )
+    agent = OfficeAgent(client=client, out_dir=tmp_path)
+
+    result = agent.run("make a doc")
+
+    assert result.reply == "done"
+    assert len(client.requests) == 2
+
+
+def test_agent_gives_up_after_repeated_rate_limits(tmp_path):
+    client = FakeClient(
+        [_rate_limited("Please try again in 0.01s.") for _ in range(4)]
+    )
+    agent = OfficeAgent(client=client, out_dir=tmp_path)
+
+    with pytest.raises(RateLimitError):
+        agent.run("make a doc")
+
+
+def test_agent_passes_max_completion_tokens_only_when_set(tmp_path):
+    client = FakeClient([_response(content="ok"), _response(content="ok")])
+    OfficeAgent(client=client, out_dir=tmp_path).run("hi")
+    assert "max_completion_tokens" not in client.requests[0]
+
+    OfficeAgent(client=client, out_dir=tmp_path, max_completion_tokens=2500).run("hi")
+    assert client.requests[1]["max_completion_tokens"] == 2500
 
 
 def test_agent_stops_at_max_rounds(tmp_path):
