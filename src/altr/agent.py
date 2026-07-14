@@ -48,6 +48,27 @@ def _tool_use_failure_feedback(error: BadRequestError) -> str | None:
     return "\n\n".join(p for p in parts if p)
 
 
+_CREATE_TOOLS = ["create_document", "create_spreadsheet", "create_presentation"]
+_EDIT_TOOLS = ["read_office_file", "edit_document", "edit_spreadsheet", "edit_presentation"]
+
+_EDIT_HINTS = re.compile(
+    r"\.(docx|xlsx|pptx)\b|\b(edit|update|modify|revise|change|fix|rename|append|"
+    r"insert|delete|remove|existing|add .{0,40}(to|into))\b",
+    re.IGNORECASE,
+)
+
+
+def _tools_for(prompt: str) -> list[dict]:
+    """Send the edit tools only when the prompt suggests an existing file.
+
+    Tool schemas are prompt tokens on every round; all seven together
+    (~5k tokens) would blow tight per-minute budgets like Groq's free tier.
+    """
+    if _EDIT_HINTS.search(prompt):
+        return get_tools()
+    return get_tools(_CREATE_TOOLS)
+
+
 def _rate_limit_delay(error: RateLimitError) -> float:
     """Seconds to wait before retrying a 429, from the provider's own hint.
 
@@ -119,7 +140,7 @@ class OfficeAgent:
 
         request: dict = {
             "model": self.model,
-            "tools": get_tools(),
+            "tools": _tools_for(prompt),
             "tool_choice": "auto",
             "temperature": self.temperature,
         }
@@ -174,8 +195,10 @@ class OfficeAgent:
                 outcome = dispatch(
                     tc.function.name, tc.function.arguments, self.out_dir, self.templates
                 )
-                if outcome.get("ok"):
-                    result.files.append(Path(outcome["file"]))
+                if outcome.get("ok") and "file" in outcome:  # reads return no file
+                    path = Path(outcome["file"])
+                    if path not in result.files:
+                        result.files.append(path)
                 messages.append(
                     {
                         "role": "tool",
