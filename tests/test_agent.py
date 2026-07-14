@@ -191,3 +191,21 @@ def test_agent_stops_at_max_rounds(tmp_path):
 
     assert len(client.requests) == 3
     assert "max tool-call rounds" in result.reply
+
+
+def test_agent_handles_fileless_tool_outcomes(tmp_path):
+    """read_office_file succeeds without producing a file - must not crash."""
+    doc_args = {"filename": "a.docx", "blocks": [{"type": "paragraph", "text": "x"}]}
+    client = FakeClient(
+        [
+            _response(tool_calls=[_tool_call("c1", "create_document", doc_args)]),
+            _response(tool_calls=[_tool_call("c2", "read_office_file", {"path": str(tmp_path / "a.docx")})]),
+            _response(content="done"),
+        ]
+    )
+    agent = OfficeAgent(client=client, out_dir=tmp_path)
+
+    result = agent.run("make then read")
+
+    assert [p.name for p in result.files] == ["a.docx"]
+    assert result.reply == "done"
