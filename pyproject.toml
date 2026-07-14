@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "officesmith"
+version = "0.1.0"
+description = "Office document skills (docx, xlsx, pptx) for open-weight models on Groq, Ollama, vLLM - any OpenAI-compatible endpoint."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Pasindu Suraweera" }]
+requires-python = ">=3.10"
+keywords = ["llm", "tool-calling", "skills", "groq", "gpt-oss", "docx", "xlsx", "pptx"]
+dependencies = [
+    "openai>=1.40",
+    "pydantic>=2.7",
+    "python-docx>=1.1",
+    "openpyxl>=3.1",
+    "python-pptx>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+officesmith = "officesmith.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/PasinduSuraweera/altr-oss"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/officesmith"]

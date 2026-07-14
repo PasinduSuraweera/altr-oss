@@ -1,0 +1,26 @@
+{
+  "filename": "engineer-onboarding.docx",
+  "title": "Engineering Onboarding Guide",
+  "blocks": [
+    { "type": "heading", "level": 1, "text": "Week one" },
+    { "type": "paragraph", "text": "Welcome aboard! This guide walks you through your first week." },
+    {
+      "type": "bullet_list",
+      "items": [
+        "Get repo access and clone the monorepo",
+        "Run the dev environment bootstrap script",
+        "Ship one small PR by Friday"
+      ]
+    },
+    { "type": "heading", "level": 1, "text": "Key contacts" },
+    {
+      "type": "table",
+      "headers": ["Area", "Owner"],
+      "rows": [
+        ["Infrastructure", "Priya"],
+        ["Frontend", "Marco"],
+        ["On-call schedule", "PagerDuty rota"]
+      ]
+    }
+  ]
+}

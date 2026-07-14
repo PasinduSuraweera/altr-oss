@@ -1,0 +1,38 @@
+# Contributing to officesmith
+
+Thanks for your interest! Bug reports, new block types, renderer improvements,
+and docs are all welcome.
+
+## Development setup
+
+You need Python 3.10+.
+
+```sh
+git clone https://github.com/PasinduSuraweera/altr-oss
+cd altr-oss
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+pytest
+```
+
+Try the offline renderer without an API key:
+
+```sh
+officesmith render presentation examples/pitch-deck.json
+```
+
+## Guidelines
+
+- Keep PRs focused: one change per PR.
+- Every schema or renderer change needs a test that re-opens the generated
+  file and asserts on its contents (see `tests/test_renderers.py`).
+- Field descriptions in `schemas.py` are model-facing prompt text - keep them
+  short, concrete, and example-driven.
+- `dispatch()` must never raise on bad model input; return
+  `{"ok": False, "error": ...}` so the model can self-correct.
+
+## Proposing features
+
+Open an issue first for anything beyond a small fix (new document features,
+template support, new output formats) - a short design discussion up front
+saves rework.

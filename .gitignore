@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+
+# Generated documents
+/output/
+/smoke/
+
+# Editor/OS noise
+.idea/
+.vscode/
+.DS_Store

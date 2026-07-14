@@ -1,0 +1,33 @@
+{
+  "filename": "solar-drones-pitch.pptx",
+  "slides": [
+    {
+      "layout": "title",
+      "title": "SolarDrones",
+      "subtitle": "Autonomous solar-powered delivery - Series A"
+    },
+    {
+      "layout": "bullets",
+      "title": "The problem",
+      "bullets": [
+        { "text": "Last-mile delivery is 53% of shipping cost" },
+        { "text": "Diesel fleets face tightening emissions rules" },
+        { "text": "Rural coverage is unprofitable today", "level": 1 }
+      ],
+      "notes": "Open with the cost number - it lands well."
+    },
+    {
+      "layout": "section",
+      "title": "Our solution"
+    },
+    {
+      "layout": "bullets",
+      "title": "Solar-recharging drone network",
+      "bullets": [
+        { "text": "18 kg payload, 120 km range" },
+        { "text": "Zero-cost recharge at solar relay stations" },
+        { "text": "FAA Part 135 certification in progress" }
+      ]
+    }
+  ]
+}

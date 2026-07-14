@@ -1,0 +1,20 @@
+{
+  "filename": "startup-budget.xlsx",
+  "sheets": [
+    {
+      "name": "Monthly",
+      "columns": [
+        { "header": "Item", "width": 28 },
+        { "header": "Cost (USD)", "width": 14 }
+      ],
+      "rows": [
+        ["Cloud hosting", 320],
+        ["CI minutes", 45],
+        ["Domains & certs", 12],
+        ["Error tracking", 29],
+        ["Total", "=SUM(B2:B5)"]
+      ],
+      "freeze_header": true
+    }
+  ]
+}
