@@ -34,39 +34,44 @@ def render_spreadsheet(spec: SpreadsheetSpec, out_dir: Path) -> Path:
     wb.remove(wb.active)
 
     for sheet in spec.sheets:
-        ws = wb.create_sheet(title=sheet.name)
-        width = max((len(row) for row in sheet.rows), default=len(sheet.columns))
-        first_data_row = 1
-        if sheet.columns:
-            for i, col in enumerate(sheet.columns, start=1):
-                cell = ws.cell(row=1, column=i, value=col.header)
-                cell.font = _HEADER_FONT
-                cell.fill = _HEADER_FILL
-            if sheet.freeze_header:
-                ws.freeze_panes = "A2"
-            first_data_row = 2
-
-        total_row = _total_row_index(sheet.rows)
-        for r, row in enumerate(sheet.rows):
-            is_total = r == total_row
-            for c in range(1, width + 1):
-                cell = ws.cell(
-                    row=r + first_data_row,
-                    column=c,
-                    value=row[c - 1] if c <= len(row) else None,
-                )
-                if is_total:
-                    cell.font = _TOTAL_FONT
-                    cell.border = _TOTAL_BORDER
-                elif r % 2 == 1:
-                    cell.fill = _BAND_FILL
-
-        _size_columns(ws, sheet, width)
-        _add_charts(ws, sheet, first_data_row)
+        write_sheet(wb, sheet)
 
     path = output_path(out_dir, spec.filename, ".xlsx")
     wb.save(str(path))
     return path
+
+
+def write_sheet(wb: Workbook, sheet: Sheet) -> None:
+    """Create and fill one styled worksheet (used by render and edit)."""
+    ws = wb.create_sheet(title=sheet.name)
+    width = max((len(row) for row in sheet.rows), default=len(sheet.columns))
+    first_data_row = 1
+    if sheet.columns:
+        for i, col in enumerate(sheet.columns, start=1):
+            cell = ws.cell(row=1, column=i, value=col.header)
+            cell.font = _HEADER_FONT
+            cell.fill = _HEADER_FILL
+        if sheet.freeze_header:
+            ws.freeze_panes = "A2"
+        first_data_row = 2
+
+    total_row = _total_row_index(sheet.rows)
+    for r, row in enumerate(sheet.rows):
+        is_total = r == total_row
+        for c in range(1, width + 1):
+            cell = ws.cell(
+                row=r + first_data_row,
+                column=c,
+                value=row[c - 1] if c <= len(row) else None,
+            )
+            if is_total:
+                cell.font = _TOTAL_FONT
+                cell.border = _TOTAL_BORDER
+            elif r % 2 == 1:
+                cell.fill = _BAND_FILL
+
+    _size_columns(ws, sheet, width)
+    _add_charts(ws, sheet, first_data_row)
 
 
 def _total_row_index(rows: list[list]) -> int | None:
