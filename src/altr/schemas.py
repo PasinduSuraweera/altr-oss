@@ -103,8 +103,9 @@ class SheetChart(BaseModel):
         1, ge=1, description="1-based index of the column holding category labels."
     )
     value_columns: list[int] = Field(
-        min_length=1,
-        description="1-based indexes of numeric columns to plot as series.",
+        default_factory=list,
+        description="1-based indexes of numeric columns to plot as series. "
+        "Leave empty to plot every numeric column.",
     )
 
 
@@ -114,7 +115,7 @@ class Sheet(BaseModel):
         default_factory=list, description="Header row; rendered bold."
     )
     rows: list[list[Cell]] = Field(
-        default_factory=list,
+        min_length=1,
         description="Data rows. String cells starting with '=' are Excel formulas, "
         "e.g. '=SUM(B2:B10)'.",
     )
@@ -172,8 +173,10 @@ class Slide(BaseModel):
     )
     title: str
     subtitle: str | None = Field(None, description="Only used by title/section layouts.")
-    bullets: list[BulletPoint] = Field(
-        default_factory=list, description="Body content for the 'bullets' layout."
+    bullets: list[str | BulletPoint] = Field(
+        default_factory=list,
+        description="Body content for the 'bullets' layout: plain strings, or "
+        "{text, level} objects for indented bullets.",
     )
     chart: SlideChart | None = Field(None, description="Required for the 'chart' layout.")
     image: SlideImage | None = Field(None, description="Required for the 'image' layout.")
@@ -181,6 +184,10 @@ class Slide(BaseModel):
 
     @model_validator(mode="after")
     def _check_layout_content(self) -> "Slide":
+        self.bullets = [
+            b if isinstance(b, BulletPoint) else BulletPoint(text=b)
+            for b in self.bullets
+        ]
         if self.layout == "chart" and self.chart is None:
             raise ValueError("a 'chart' slide needs the 'chart' field")
         if self.layout == "image" and self.image is None:
