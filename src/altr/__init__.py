@@ -4,8 +4,15 @@ from .agent import DEFAULT_MODEL, GROQ_BASE_URL, OfficeAgent, RunResult
 from .markdown import markdown_to_blocks
 from .pdf import soffice_available, to_pdf
 from .prompts import SYSTEM_PROMPT
-from .schemas import DocumentSpec, PresentationSpec, SpreadsheetSpec
-from .tools import dispatch, get_tools
+from .schemas import (
+    DocumentSpec,
+    EditDocumentSpec,
+    EditPresentationSpec,
+    EditSpreadsheetSpec,
+    PresentationSpec,
+    SpreadsheetSpec,
+)
+from .tools import dispatch, get_tool_specs, get_tools
 
 __all__ = [
     "OfficeAgent",
@@ -16,7 +23,11 @@ __all__ = [
     "DocumentSpec",
     "SpreadsheetSpec",
     "PresentationSpec",
+    "EditDocumentSpec",
+    "EditSpreadsheetSpec",
+    "EditPresentationSpec",
     "get_tools",
+    "get_tool_specs",
     "dispatch",
     "markdown_to_blocks",
     "to_pdf",
