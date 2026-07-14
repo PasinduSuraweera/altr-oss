@@ -4,6 +4,10 @@ import copy
 import json
 from types import SimpleNamespace
 
+import httpx
+import pytest
+from openai import BadRequestError
+
 from altr.agent import OfficeAgent
 
 
@@ -32,7 +36,10 @@ class FakeClient:
     def _create(self, **kwargs):
         # Deep-copy: the agent mutates its messages list between rounds.
         self.requests.append(copy.deepcopy(kwargs))
-        return self._responses.pop(0)
+        item = self._responses.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return item
 
 
 def test_agent_executes_tool_calls_then_returns_reply(tmp_path):
@@ -78,6 +85,56 @@ def test_agent_feeds_errors_back_to_model(tmp_path):
     error_msg = json.loads(client.requests[1]["messages"][-1]["content"])
     assert error_msg["ok"] is False
     assert len(result.files) == 1
+
+
+def _bad_request(body):
+    request = httpx.Request("POST", "https://api.test/chat/completions")
+    response = httpx.Response(400, request=request, json={"error": body})
+    return BadRequestError("Error code: 400", response=response, body=body)
+
+
+def test_agent_retries_after_server_side_tool_rejection(tmp_path):
+    """Groq validates tool args server-side and 400s with 'tool_use_failed';
+    the agent must feed that back to the model instead of crashing."""
+    rejection = _bad_request(
+        {
+            "message": "parameters for tool create_document did not match schema",
+            "type": "invalid_request_error",
+            "code": "tool_use_failed",
+            "failed_generation": '{"name": "create_document", "arguments": {}}',
+        }
+    )
+    good_args = {"filename": "memo.docx", "blocks": [{"type": "paragraph", "text": "hi"}]}
+    client = FakeClient(
+        [
+            rejection,
+            _response(tool_calls=[_tool_call("call_1", "create_document", good_args)]),
+            _response(content="done"),
+        ]
+    )
+    agent = OfficeAgent(client=client, out_dir=tmp_path)
+
+    result = agent.run("write me a memo")
+
+    assert [p.name for p in result.files] == ["memo.docx"]
+    assert result.reply == "done"
+    # The retry request must carry the schema feedback message.
+    feedback = client.requests[1]["messages"][-1]
+    assert feedback["role"] == "user"
+    assert "did not match" in feedback["content"]
+    assert "failed_generation" not in feedback["content"]  # inlined, not raw key
+    assert "create_document" in feedback["content"]
+
+
+def test_agent_reraises_unrelated_bad_requests(tmp_path):
+    error = _bad_request(
+        {"message": "context length exceeded", "type": "invalid_request_error"}
+    )
+    client = FakeClient([error])
+    agent = OfficeAgent(client=client, out_dir=tmp_path)
+
+    with pytest.raises(BadRequestError):
+        agent.run("write me a memo")
 
 
 def test_agent_stops_at_max_rounds(tmp_path):
