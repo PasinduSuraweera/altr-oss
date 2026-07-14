@@ -6,7 +6,15 @@ from altr.tools import dispatch, get_tools
 def test_get_tools_shape():
     tools = get_tools()
     names = {t["function"]["name"] for t in tools}
-    assert names == {"create_document", "create_spreadsheet", "create_presentation"}
+    assert names == {
+        "create_document",
+        "create_spreadsheet",
+        "create_presentation",
+        "read_office_file",
+        "edit_document",
+        "edit_spreadsheet",
+        "edit_presentation",
+    }
     for tool in tools:
         assert tool["type"] == "function"
         assert tool["function"]["description"]
