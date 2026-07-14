@@ -18,9 +18,15 @@ altr and it gains three tools it can call to produce real files:
 
 The model sends structured JSON through standard tool calling; altr
 validates it (Pydantic) and renders it (`python-docx`, `openpyxl`,
-`python-pptx`). Renderer errors are fed back to the model so it can correct
-itself. No code execution, no sandboxes - the model can only emit document
-content.
+`python-pptx`). Validation and renderer errors are fed back to the model so
+it can correct itself - including server-side tool-call rejections from
+strict endpoints like Groq, which are turned into feedback and retried
+instead of crashing the run. No code execution, no sandboxes - the model can
+only emit document content.
+
+Output ships with a clean default theme - accent-colored headings, styled
+tables and header rows, and charts drawn in a colorblind-safe palette - so
+files look designed out of the box. Or bring your own brand template (below).
 
 ## Install
 
@@ -59,6 +65,10 @@ altr make "..." --base-url http://localhost:11434/v1 --model llama3.3 --api-key 
 # vLLM / LM Studio / anything else that speaks chat completions
 altr make "..." --base-url http://localhost:8000/v1 --model my-model
 ```
+
+Generation runs at `--temperature 0.3` by default - tool arguments are
+structured output, and sampling cooler makes small models dramatically more
+reliable at producing complete, schema-correct documents.
 
 Render a JSON spec directly, no model involved (great for testing):
 
@@ -103,13 +113,17 @@ back as data you can hand to the model for self-correction.
 ## What the model can express
 
 - **Documents**: headings (9 levels), paragraphs with inline
-  **bold**/*italic*/`code`, bullet & numbered lists, tables with bold headers,
-  images with captions, whole markdown blocks, page breaks.
-- **Spreadsheets**: multiple worksheets, bold header rows, column widths,
-  frozen header rows, live Excel formulas (`=SUM(B2:B10)`), and bar/line/pie
-  charts built from the sheet's data.
+  **bold**/*italic*/`code`, bullet & numbered lists, styled tables with banded
+  rows, images with captions, whole markdown blocks, page breaks.
+- **Spreadsheets**: multiple worksheets, styled header rows, fitted column
+  widths, frozen headers, live Excel formulas (`=SUM(B2:B10)`), a detected
+  `Total` row set in bold, and bar/line/pie charts built from the sheet's
+  data - if the model doesn't say which columns to plot, altr infers the
+  numeric ones (and leaves the total row out of the chart).
 - **Presentations**: title slides, section dividers, bulleted slides with
-  indent levels, chart slides, full-width image slides, speaker notes.
+  indent levels (plain strings work too), chart slides, full-width image
+  slides, speaker notes. Common model slips are repaired: chart data on a
+  mislabeled slide still becomes a chart slide.
 
 Filenames from the model are sanitized to their base name, so output can never
 escape the output directory. Image paths must point at existing local files -
@@ -128,6 +142,9 @@ altr render presentation deck.json --template brand.pptx
 Custom `.pptx` templates must keep the stock layout order (0 title,
 1 title+content, 2 section header, 5 title only).
 
+Passing a template switches the built-in theme off entirely - your fonts,
+colors, and masters are used untouched.
+
 ## PDF export
 
 Pass `--pdf` to `make` or `render` to also export each created file as PDF.
@@ -141,7 +158,8 @@ to_pdf("output/report.docx")
 ## Roadmap
 
 - [ ] Recipe/preset library of reusable prompts
-- [ ] Chart styling options (colors, axis titles, legends)
+- [ ] Configurable theme (swap the accent color and chart palette)
+- [ ] Chart axis titles and number formats
 - [ ] Nested markdown lists and blockquotes
 - [ ] Watermarks and headers/footers
 
