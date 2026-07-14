@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "altr-oss"
-version = "0.2.2"
+version = "0.3.0"
 description = "Open source doc / excel / ppt skills for LLMs - Groq, Ollama, vLLM, any OpenAI-compatible endpoint."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -31,7 +31,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+mcp = ["mcp>=1.2"]
+dev = ["pytest>=8", "mcp>=1.2"]
 
 [project.scripts]
 altr = "altr.cli:main"
