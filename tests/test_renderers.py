@@ -141,3 +141,27 @@ def test_chart_without_value_columns_plots_numeric_columns(tmp_path):
     assert len(charts) == 1
     # The lone numeric column (B) was picked up as the data series.
     assert "B" in charts[0].series[0].val.numRef.f
+
+
+def test_table_cells_render_inline_markdown(tmp_path):
+    spec = DocumentSpec.model_validate(
+        {
+            "filename": "cells.docx",
+            "blocks": [
+                {
+                    "type": "table",
+                    "headers": ["**Benchmark**", "Notes"],
+                    "rows": [["**MMLU**", "*multi-subject* QA"]],
+                }
+            ],
+        }
+    )
+    path = render_document(spec, tmp_path)
+    table = Document(str(path)).tables[0]
+    assert table.rows[0].cells[0].text == "Benchmark"  # no literal asterisks
+    body_cell = table.rows[1].cells[0]
+    assert body_cell.text == "MMLU"
+    assert body_cell.paragraphs[0].runs[0].bold
+    notes_runs = table.rows[1].cells[1].paragraphs[0].runs
+    assert any(r.italic for r in notes_runs)
+    assert "*" not in table.rows[1].cells[1].text
